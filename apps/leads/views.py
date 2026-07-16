@@ -6,7 +6,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-
+from uuid import UUID
 
 from apps.leads.selectors import (
     get_deleted_lead_by_id,
@@ -33,11 +33,35 @@ from apps.leads.services import (
     update_lead,
 )
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+
 
 User = get_user_model()
 
 
+@extend_schema_view(
+    list=extend_schema(
+        responses=LeadListSerializer(many=True),
+        summary="List leads",
+    ),
+    retrieve=extend_schema(
+        responses=LeadDetailSerializer,
+        summary="Retrieve lead",
+    ),
+    create=extend_schema(
+        request=LeadCreateSerializer,
+        responses=LeadDetailSerializer,
+        summary="Create lead",
+    ),
+    partial_update=extend_schema(
+        request=LeadUpdateSerializer,
+        responses=LeadDetailSerializer,
+        summary="Update lead",
+    ),
+)
 class LeadViewSet(viewsets.ViewSet):
+    serializer_class = LeadDetailSerializer
+
     def list(
         self,
         request,
@@ -50,10 +74,22 @@ class LeadViewSet(viewsets.ViewSet):
 
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Retrieve lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     def retrieve(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -79,10 +115,22 @@ class LeadViewSet(viewsets.ViewSet):
             status=201,
         )
 
+    @extend_schema(
+        summary="Partial update lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     def partial_update(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -99,10 +147,22 @@ class LeadViewSet(viewsets.ViewSet):
 
         return Response(LeadDetailSerializer(lead).data)
 
+    @extend_schema(
+        summary="Soft delete lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     def destroy(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -111,6 +171,18 @@ class LeadViewSet(viewsets.ViewSet):
 
         return Response(status=204)
 
+    @extend_schema(
+        summary="Assign lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     @action(
         detail=True,
         methods=["post"],
@@ -118,7 +190,7 @@ class LeadViewSet(viewsets.ViewSet):
     def assign(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -136,6 +208,18 @@ class LeadViewSet(viewsets.ViewSet):
 
         return Response(LeadDetailSerializer(lead).data)
 
+    @extend_schema(
+        summary="Create contact attempt",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     @action(
         detail=True,
         methods=["post"],
@@ -143,7 +227,7 @@ class LeadViewSet(viewsets.ViewSet):
     def contact(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -161,6 +245,18 @@ class LeadViewSet(viewsets.ViewSet):
             status=201,
         )
 
+    @extend_schema(
+        summary="Convert lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     @action(
         detail=True,
         methods=["post"],
@@ -168,7 +264,7 @@ class LeadViewSet(viewsets.ViewSet):
     def convert(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_lead_by_id(pk)
@@ -177,6 +273,18 @@ class LeadViewSet(viewsets.ViewSet):
 
         return Response(LeadDetailSerializer(lead).data)
 
+    @extend_schema(
+        summary="Restore lead",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Lead UUID",
+            ),
+        ],
+        responses=LeadDetailSerializer,
+    )
     @action(
         detail=True,
         methods=["post"],
@@ -184,7 +292,7 @@ class LeadViewSet(viewsets.ViewSet):
     def restore(
         self,
         request,
-        pk=None,
+        pk: UUID = None,
     ):
 
         lead = get_deleted_lead_by_id(pk)

@@ -1,77 +1,126 @@
 openapi: 3.0.3
 info:
-  title: Lead SLA CRM API
+  title: Lead CRM API
   version: 1.0.0
-  description: Backend Developer Hiring Test Task
+  description: Backend Developer Test Task - Lead SLA & Outreach Module
 paths:
   /api/leads/:
     get:
-      operationId: api_leads_retrieve
+      operationId: leads_list
+      summary: List leads
       tags:
-      - api
+      - leads
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeadList'
+          description: ''
     post:
-      operationId: api_leads_create
+      operationId: leads_create
+      summary: Create lead
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadCreate'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '201':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
   /api/leads/{id}/:
     get:
-      operationId: api_leads_retrieve_2
+      operationId: leads_retrieve
+      summary: Retrieve lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
     patch:
-      operationId: api_leads_partial_update
+      operationId: leads_partial_update
+      summary: Update lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadUpdate'
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
     delete:
-      operationId: api_leads_destroy
+      operationId: leads_destroy
+      summary: Soft delete lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -81,77 +130,319 @@ paths:
           description: No response body
   /api/leads/{id}/assign/:
     post:
-      operationId: api_leads_assign_create
+      operationId: leads_assign_create
+      summary: Assign lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
   /api/leads/{id}/contact/:
     post:
-      operationId: api_leads_contact_create
+      operationId: leads_contact_create
+      summary: Create contact attempt
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
   /api/leads/{id}/convert/:
     post:
-      operationId: api_leads_convert_create
+      operationId: leads_convert_create
+      summary: Convert lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
   /api/leads/{id}/restore/:
     post:
-      operationId: api_leads_restore_create
+      operationId: leads_restore_create
+      summary: Restore lead
       parameters:
       - in: path
         name: id
         schema:
           type: string
+        description: Lead UUID
         required: true
       tags:
-      - api
+      - leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadDetail'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
 components:
+  schemas:
+    LeadCreate:
+      type: object
+      description: Create lead serializer.
+      properties:
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 30
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+      required:
+      - email
+      - full_name
+      - source
+    LeadDetail:
+      type: object
+      description: Serializer for lead details.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Unique identifier.
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 30
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        assigned_advisor:
+          type: integer
+          readOnly: true
+          nullable: true
+        sla_deadline:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        first_contacted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        converted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Creation timestamp.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Last update timestamp.
+      required:
+      - assigned_advisor
+      - converted_at
+      - created_at
+      - email
+      - first_contacted_at
+      - full_name
+      - id
+      - sla_deadline
+      - source
+      - status
+      - updated_at
+    LeadList:
+      type: object
+      description: Serializer for lead list.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Unique identifier.
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 30
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        assigned_advisor:
+          type: integer
+          nullable: true
+        sla_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Creation timestamp.
+      required:
+      - created_at
+      - email
+      - full_name
+      - id
+      - source
+    PatchedLeadUpdate:
+      type: object
+      description: Update lead information.
+      properties:
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 30
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+    SourceEnum:
+      enum:
+      - website
+      - referral
+      - social
+      - event
+      type: string
+      description: |-
+        * `website` - Website
+        * `referral` - Referral
+        * `social` - Social Media
+        * `event` - Event
+    StatusEnum:
+      enum:
+      - new
+      - assigned
+      - contacted
+      - converted
+      - closed_lost
+      type: string
+      description: |-
+        * `new` - New
+        * `assigned` - Assigned
+        * `contacted` - Contacted
+        * `converted` - Converted
+        * `closed_lost` - Closed Lost
   securitySchemes:
     basicAuth:
       type: http

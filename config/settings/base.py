@@ -170,11 +170,11 @@ REST_FRAMEWORK = {
 # ------------------------------------------------------------------------------
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Lead SLA CRM API",
-    "DESCRIPTION": "Backend Developer Hiring Test Task",
+    "TITLE": "Lead CRM API",
+    "DESCRIPTION": "Backend Developer Test Task - Lead SLA & Outreach Module",
     "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
-
 # ------------------------------------------------------------------------------
 # Logging
 # ------------------------------------------------------------------------------

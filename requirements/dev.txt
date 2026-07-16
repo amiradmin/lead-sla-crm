@@ -8,3 +8,5 @@ ruff
 black
 isort
 pre-commit
+drf-spectacular
+drf-spectacular-sidecar
