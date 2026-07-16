@@ -1,58 +1,57 @@
 """
-Database query functions for the leads application.
+Database queries for leads.
 
-Selectors contain only read operations.
-Business logic should stay inside services.py.
+No business logic here.
 """
+
+from django.utils import timezone
 
 from apps.leads.models import Lead
 
 
 def get_leads():
     """
-    Return all active leads.
-
-    Returns:
-        QuerySet:
-            Active Lead objects.
-    """
-
-    return Lead.objects.all()
-
-
-def get_lead_by_id(
-    lead_id,
-):
-    """
-    Retrieve an active lead by ID.
-
-    Args:
-        lead_id:
-            UUID of the lead.
-
-    Returns:
-        Lead instance or None.
+    Return active leads only.
     """
 
     return Lead.objects.filter(
-        id=lead_id,
+        deleted_at__isnull=True,
+    )
+
+
+def get_lead_by_id(pk):
+    """
+    Get active lead.
+    """
+
+    return Lead.objects.filter(
+        id=pk,
+        deleted_at__isnull=True,
     ).first()
 
 
-def get_deleted_lead_by_id(
-    lead_id,
-):
+def get_deleted_lead_by_id(pk):
     """
-    Retrieve a soft deleted lead.
-
-    Args:
-        lead_id:
-            UUID of the lead.
-
-    Returns:
-        Deleted Lead instance or None.
+    Get soft deleted lead.
     """
 
-    return Lead.all_objects.filter(
-        id=lead_id,
+    return Lead.objects.filter(
+        id=pk,
+        deleted_at__isnull=False,
     ).first()
+
+
+def get_overdue_leads():
+    """
+    Return SLA breached leads.
+    """
+
+    return Lead.objects.filter(
+        status__in=[
+            "new",
+            "assigned",
+        ],
+        sla_deadline__lt=timezone.now(),
+        first_contacted_at__isnull=True,
+        deleted_at__isnull=True,
+    )

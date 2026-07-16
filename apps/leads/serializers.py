@@ -1,203 +1,129 @@
 """
-Serializers for the leads application.
-
-This module handles:
-- Validation of incoming API data.
-- Conversion between Lead model instances and JSON responses.
+Serializers for leads API.
 """
 
 from rest_framework import serializers
 
-from apps.leads.models import Lead
-from apps.leads.enums import LeadStatus
+from apps.leads.models import ContactAttempt, Lead
 
 
 class LeadListSerializer(serializers.ModelSerializer):
     """
-    Lightweight serializer for listing leads.
-
-    Used for collection endpoints where
-    full lead details are not required.
+    Serializer for lead list.
     """
 
     class Meta:
-        """
-        Serializer configuration.
-        """
-
         model = Lead
 
         fields = [
             "id",
-            "first_name",
-            "last_name",
+            "full_name",
             "email",
-            "company",
+            "phone",
+            "source",
             "status",
-            "created_at",
-        ]
-
-        read_only_fields = [
-            "id",
+            "assigned_advisor",
+            "sla_deadline",
             "created_at",
         ]
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
     """
-    Detailed serializer for retrieving a single lead.
+    Serializer for lead details.
     """
 
     class Meta:
-        """
-        Serializer configuration.
-        """
-
         model = Lead
 
         fields = [
             "id",
-            "first_name",
-            "last_name",
+            "full_name",
             "email",
             "phone",
-            "company",
+            "source",
             "status",
-            "notes",
+            "assigned_advisor",
+            "sla_deadline",
+            "first_contacted_at",
+            "converted_at",
             "created_at",
             "updated_at",
-            "deleted_at",
         ]
 
         read_only_fields = [
             "id",
+            "status",
+            "assigned_advisor",
+            "sla_deadline",
+            "first_contacted_at",
+            "converted_at",
             "created_at",
             "updated_at",
-            "deleted_at",
         ]
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating new leads.
-
-    Validation happens here.
-    Object creation should happen inside services.py.
+    Create lead serializer.
     """
 
     class Meta:
-        """
-        Serializer configuration.
-        """
-
         model = Lead
 
         fields = [
-            "first_name",
-            "last_name",
+            "full_name",
             "email",
             "phone",
-            "company",
-            "notes",
+            "source",
         ]
 
-        extra_kwargs = {
-            "phone": {
-                "required": False,
-                "allow_blank": True,
-            },
-            "company": {
-                "required": False,
-                "allow_blank": True,
-            },
-            "notes": {
-                "required": False,
-                "allow_blank": True,
-            },
-        }
-
-    def validate_email(
-        self,
-        value: str,
-    ) -> str:
-        """
-        Normalize email address.
-
-        Args:
-            value:
-                Submitted email.
-
-        Returns:
-            Lowercase email.
-        """
-
+    def validate_email(self, value):
         return value.lower()
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating existing leads.
-
-    Supports partial updates using PATCH.
+    Update lead information.
     """
 
     class Meta:
-        """
-        Serializer configuration.
-        """
-
         model = Lead
 
         fields = [
-            "first_name",
-            "last_name",
+            "full_name",
             "email",
             "phone",
-            "company",
+            "source",
+        ]
+
+
+class AssignLeadSerializer(serializers.Serializer):
+    """
+    Assign advisor.
+    """
+
+    assigned_advisor = serializers.IntegerField()
+
+
+class ContactAttemptCreateSerializer(serializers.ModelSerializer):
+    """
+    Create contact attempt.
+    """
+
+    class Meta:
+        model = ContactAttempt
+
+        fields = [
+            "channel",
+            "outcome",
             "notes",
         ]
 
-        extra_kwargs = {
-            "phone": {
-                "required": False,
-                "allow_blank": True,
-            },
-            "company": {
-                "required": False,
-                "allow_blank": True,
-            },
-            "notes": {
-                "required": False,
-                "allow_blank": True,
-            },
-        }
 
-    def validate_email(
-        self,
-        value: str,
-    ) -> str:
-        """
-        Normalize email before update.
-
-        Args:
-            value:
-                New email.
-
-        Returns:
-            Lowercase email.
-        """
-
-        return value.lower()
-
-
-class LeadStatusUpdateSerializer(serializers.Serializer):
+class ConvertLeadSerializer(serializers.Serializer):
     """
-    Serializer dedicated to changing lead status.
-
-    Status changes are separated because they
-    represent a business action.
+    Convert lead.
     """
 
-    status = serializers.ChoiceField(
-        choices=LeadStatus.choices,
-    )
+    pass

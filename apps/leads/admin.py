@@ -1,41 +1,41 @@
 """
-Admin configuration for leads application.
+Common Django admin utilities.
+
+Reusable admin classes shared across applications.
 """
 
 from django.contrib import admin
 
-from apps.leads.models import Lead
 
-
-@admin.register(Lead)
-class LeadAdmin(admin.ModelAdmin):
+class BaseModelAdmin(admin.ModelAdmin):
     """
-    Admin interface configuration for Lead model.
+    Base admin configuration.
+
+    Provides common fields for all models.
     """
 
-    list_display = (
-        "first_name",
-        "last_name",
-        "email",
-        "status",
+    readonly_fields = (
+        "id",
         "created_at",
+        "updated_at",
     )
 
-    list_filter = (
-        "status",
-        "created_at",
-    )
+    ordering = ("-created_at",)
 
-    search_fields = (
-        "first_name",
-        "last_name",
-        "email",
-        "company",
-    )
+
+class SoftDeleteAdmin(BaseModelAdmin):
+    """
+    Admin configuration for soft-deletable models.
+    """
 
     readonly_fields = (
         "id",
         "created_at",
         "updated_at",
         "deleted_at",
+    )
+
+    list_filter = (
+        "is_deleted",
+        "created_at",
     )

@@ -1,49 +1,46 @@
 """
 Database models for the leads application.
-
-This module contains business entities related
-to customer leads.
 """
 
+from datetime import timedelta
+
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.common.models import SoftDeleteModel
-from apps.leads.enums import LeadStatus
+from apps.leads.enums import (
+    ContactChannel,
+    ContactOutcome,
+    LeadSource,
+    LeadStatus,
+)
 
 
 class Lead(SoftDeleteModel):
     """
-    Represents a potential customer.
+    Represents an inbound customer lead.
 
-    A lead contains contact information and
-    lifecycle status.
+    A lead must be contacted within the SLA window.
     """
 
-    first_name = models.CharField(
-        max_length=100,
-        help_text="Lead first name.",
-    )
-
-    last_name = models.CharField(
-        max_length=100,
-        help_text="Lead last name.",
+    full_name = models.CharField(
+        max_length=255,
     )
 
     email = models.EmailField(
         unique=True,
-        help_text="Lead email address.",
     )
 
     phone = models.CharField(
         max_length=30,
         blank=True,
-        help_text="Lead phone number.",
     )
 
-    company = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Company associated with the lead.",
+    source = models.CharField(
+        max_length=20,
+        choices=LeadSource.choices,
+        db_index=True,
     )
 
     status = models.CharField(
@@ -51,30 +48,99 @@ class Lead(SoftDeleteModel):
         choices=LeadStatus.choices,
         default=LeadStatus.NEW,
         db_index=True,
-        help_text="Current lead lifecycle status.",
     )
 
-    notes = models.TextField(
+    assigned_advisor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
         blank=True,
-        help_text="Additional notes about the lead.",
+        on_delete=models.SET_NULL,
+        related_name="assigned_leads",
+    )
+
+    sla_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    first_contacted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    converted_at = models.DateTimeField(
+        null=True,
+        blank=True,
     )
 
     class Meta:
-        """
-        Django model configuration.
-        """
-
         ordering = [
             "-created_at",
         ]
 
-        verbose_name = "Lead"
-
-        verbose_name_plural = "Leads"
-
-    def __str__(self) -> str:
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
         """
-        Return human readable representation.
+        SLA rule:
+        New leads get 24 hour deadline.
         """
 
-        return f"{self.first_name} {self.last_name}"
+        if self._state.adding:
+            self.sla_deadline = timezone.now() + timedelta(hours=24)
+
+        super().save(
+            *args,
+            **kwargs,
+        )
+
+    def __str__(self):
+        return self.full_name
+
+
+class ContactAttempt(SoftDeleteModel):
+    """
+    Represents a lead contact attempt.
+    """
+
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name="contact_attempts",
+    )
+
+    channel = models.CharField(
+        max_length=20,
+        choices=ContactChannel.choices,
+    )
+
+    outcome = models.CharField(
+        max_length=20,
+        choices=ContactOutcome.choices,
+    )
+
+    notes = models.TextField(
+        blank=True,
+    )
+
+    attempted_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="contact_attempts",
+    )
+
+    class Meta:
+        ordering = [
+            "-attempted_at",
+        ]
+
+    def __str__(self):
+        return f"{self.lead.full_name} - {self.outcome}"

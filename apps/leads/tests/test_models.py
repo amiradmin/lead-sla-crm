@@ -1,50 +1,72 @@
 """
-Tests for Lead models.
+Lead model tests.
 """
 
 import pytest
+from django.utils import timezone
 
-from apps.leads.enums import LeadStatus
-from apps.leads.tests.factories import LeadFactory
+from datetime import timedelta
+
+from apps.leads.models import Lead, ContactAttempt
+from apps.leads.enums import (
+    LeadSource,
+    LeadStatus,
+    ContactChannel,
+    ContactOutcome,
+)
 
 
 @pytest.mark.django_db
 def test_create_lead():
 
-    lead = LeadFactory()
+    lead = Lead.objects.create(
+        full_name="Amir Behvandi",
+        email="amir@test.com",
+        source=LeadSource.WEBSITE,
+    )
 
     assert lead.id is not None
-
+    assert lead.full_name == "Amir Behvandi"
     assert lead.status == LeadStatus.NEW
 
-    assert lead.is_deleted is False
+
+@pytest.mark.django_db
+def test_lead_sets_sla_deadline():
+
+    before = timezone.now()
+
+    lead = Lead.objects.create(
+        full_name="Test User",
+        email="test@test.com",
+        source=LeadSource.EVENT,
+    )
+
+    after = timezone.now()
+
+    assert lead.sla_deadline is not None
+
+    assert (
+        before + timedelta(hours=24) <= lead.sla_deadline <= after + timedelta(hours=24)
+    )
 
 
 @pytest.mark.django_db
-def test_soft_delete_lead():
+def test_contact_attempt_relation(
+    user,
+):
 
-    lead = LeadFactory()
+    lead = Lead.objects.create(
+        full_name="John Smith",
+        email="john@test.com",
+        source=LeadSource.SOCIAL,
+    )
 
-    lead.delete()
+    attempt = ContactAttempt.objects.create(
+        lead=lead,
+        channel=ContactChannel.CALL,
+        outcome=ContactOutcome.NO_ANSWER,
+        created_by=user,
+    )
 
-    lead.refresh_from_db()
-
-    assert lead.is_deleted is True
-
-    assert lead.deleted_at is not None
-
-
-@pytest.mark.django_db
-def test_restore_lead():
-
-    lead = LeadFactory()
-
-    lead.delete()
-
-    lead.restore()
-
-    lead.refresh_from_db()
-
-    assert lead.is_deleted is False
-
-    assert lead.deleted_at is None
+    assert attempt.lead == lead
+    assert lead.contact_attempts.count() == 1

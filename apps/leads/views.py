@@ -1,46 +1,32 @@
 """
-API views for the leads application.
-
-This module exposes REST API endpoints for:
-
-- Listing leads
-- Creating leads
-- Retrieving lead details
-- Updating leads
-- Soft deleting leads
-- Restoring deleted leads
-- Updating lead status
-
-The view layer is responsible only for:
-- HTTP request handling
-- Serializer validation
-- Returning responses
-
-Database operations belong to selectors.py.
-Business logic belongs to services.py.
+Lead API views.
 """
 
-from __future__ import annotations
-
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.request import Request
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+
 
 from apps.leads.selectors import (
     get_deleted_lead_by_id,
     get_lead_by_id,
     get_leads,
 )
+
 from apps.leads.serializers import (
+    AssignLeadSerializer,
+    ContactAttemptCreateSerializer,
     LeadCreateSerializer,
     LeadDetailSerializer,
     LeadListSerializer,
-    LeadStatusUpdateSerializer,
     LeadUpdateSerializer,
 )
+
 from apps.leads.services import (
-    change_lead_status,
+    assign_lead,
+    convert_lead,
+    create_contact_attempt,
     create_lead,
     delete_lead,
     restore_lead,
@@ -48,153 +34,58 @@ from apps.leads.services import (
 )
 
 
+User = get_user_model()
+
+
 class LeadViewSet(viewsets.ViewSet):
-    """
-    ViewSet providing CRUD operations for Lead objects.
-
-    The implementation follows service-layer architecture.
-    """
-
     def list(
         self,
-        request: Request,
-    ) -> Response:
-        """
-        Return all active leads.
-        """
-
-        leads = get_leads()
+        request,
+    ):
 
         serializer = LeadListSerializer(
-            leads,
+            get_leads(),
             many=True,
         )
 
-        return Response(
-            serializer.data,
-        )
+        return Response(serializer.data)
 
     def retrieve(
         self,
-        request: Request,
+        request,
         pk=None,
-    ) -> Response:
-        """
-        Retrieve a single lead.
-        """
+    ):
 
-        lead = get_lead_by_id(
-            pk,
-        )
+        lead = get_lead_by_id(pk)
 
         if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response(status=404)
 
-        serializer = LeadDetailSerializer(
-            lead,
-        )
-
-        return Response(
-            serializer.data,
-        )
+        return Response(LeadDetailSerializer(lead).data)
 
     def create(
         self,
-        request: Request,
-    ) -> Response:
-        """
-        Create a new lead.
-        """
+        request,
+    ):
 
-        serializer = LeadCreateSerializer(
-            data=request.data,
-        )
+        serializer = LeadCreateSerializer(data=request.data)
 
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        serializer.is_valid(raise_exception=True)
 
-        lead = create_lead(
-            **serializer.validated_data,
-        )
-
-        output = LeadDetailSerializer(
-            lead,
-        )
+        lead = create_lead(**serializer.validated_data)
 
         return Response(
-            output.data,
-            status=status.HTTP_201_CREATED,
-        )
-
-    def update(
-        self,
-        request: Request,
-        pk=None,
-    ) -> Response:
-        """
-        Fully update a lead.
-        """
-
-        lead = get_lead_by_id(
-            pk,
-        )
-
-        if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        serializer = LeadUpdateSerializer(
-            lead,
-            data=request.data,
-        )
-
-        serializer.is_valid(
-            raise_exception=True,
-        )
-
-        lead = update_lead(
-            lead=lead,
-            data=serializer.validated_data,
-        )
-
-        output = LeadDetailSerializer(
-            lead,
-        )
-
-        return Response(
-            output.data,
+            LeadDetailSerializer(lead).data,
+            status=201,
         )
 
     def partial_update(
         self,
-        request: Request,
+        request,
         pk=None,
-    ) -> Response:
-        """
-        Partially update a lead.
-        """
+    ):
 
-        lead = get_lead_by_id(
-            pk,
-        )
-
-        if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        lead = get_lead_by_id(pk)
 
         serializer = LeadUpdateSerializer(
             lead,
@@ -202,133 +93,102 @@ class LeadViewSet(viewsets.ViewSet):
             partial=True,
         )
 
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        serializer.is_valid(raise_exception=True)
 
-        lead = update_lead(
-            lead=lead,
-            data=serializer.validated_data,
-        )
+        lead = update_lead(lead, serializer.validated_data)
 
-        output = LeadDetailSerializer(
-            lead,
-        )
-
-        return Response(
-            output.data,
-        )
+        return Response(LeadDetailSerializer(lead).data)
 
     def destroy(
         self,
-        request: Request,
+        request,
         pk=None,
-    ) -> Response:
-        """
-        Soft delete a lead.
-        """
+    ):
 
-        lead = get_lead_by_id(
-            pk,
-        )
+        lead = get_lead_by_id(pk)
 
-        if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        delete_lead(lead)
 
-        delete_lead(
-            lead=lead,
-        )
-
-        return Response(
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        return Response(status=204)
 
     @action(
         detail=True,
-        methods=["patch"],
-        url_path="status",
+        methods=["post"],
     )
-    def update_status(
+    def assign(
         self,
-        request: Request,
+        request,
         pk=None,
-    ) -> Response:
-        """
-        Update lead lifecycle status.
-        """
+    ):
 
-        lead = get_lead_by_id(
-            pk,
-        )
+        lead = get_lead_by_id(pk)
 
-        if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        serializer = AssignLeadSerializer(data=request.data)
 
-        serializer = LeadStatusUpdateSerializer(
-            data=request.data,
-        )
+        serializer.is_valid(raise_exception=True)
 
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        advisor = User.objects.get(id=serializer.validated_data["assigned_advisor"])
 
-        lead = change_lead_status(
-            lead=lead,
-            status=serializer.validated_data["status"],
-        )
-
-        output = LeadDetailSerializer(
+        lead = assign_lead(
             lead,
+            advisor,
+        )
+
+        return Response(LeadDetailSerializer(lead).data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+    )
+    def contact(
+        self,
+        request,
+        pk=None,
+    ):
+
+        lead = get_lead_by_id(pk)
+
+        serializer = ContactAttemptCreateSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        attempt = create_contact_attempt(
+            lead, request.user, **serializer.validated_data
         )
 
         return Response(
-            output.data,
+            {"id": attempt.id},
+            status=201,
         )
 
     @action(
         detail=True,
         methods=["post"],
-        url_path="restore",
+    )
+    def convert(
+        self,
+        request,
+        pk=None,
+    ):
+
+        lead = get_lead_by_id(pk)
+
+        lead = convert_lead(lead)
+
+        return Response(LeadDetailSerializer(lead).data)
+
+    @action(
+        detail=True,
+        methods=["post"],
     )
     def restore(
         self,
-        request: Request,
+        request,
         pk=None,
-    ) -> Response:
-        """
-        Restore a soft deleted lead.
-        """
+    ):
 
-        lead = get_deleted_lead_by_id(
-            pk,
-        )
+        lead = get_deleted_lead_by_id(pk)
 
-        if not lead:
-            return Response(
-                {
-                    "detail": "Lead not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        restore_lead(lead)
 
-        restore_lead(
-            lead=lead,
-        )
-
-        output = LeadDetailSerializer(
-            lead,
-        )
-
-        return Response(
-            output.data,
-        )
+        return Response(LeadDetailSerializer(lead).data)

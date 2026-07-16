@@ -1,105 +1,72 @@
 """
-Tests for lead business logic services.
+Lead model tests.
 """
 
 import pytest
+from django.utils import timezone
 
-from apps.leads.enums import LeadStatus
-from apps.leads.services import (
-    change_lead_status,
-    create_lead,
-    delete_lead,
-    restore_lead,
-    update_lead,
+from datetime import timedelta
+
+from apps.leads.models import Lead, ContactAttempt
+from apps.leads.enums import (
+    LeadSource,
+    LeadStatus,
+    ContactChannel,
+    ContactOutcome,
 )
 
 
 @pytest.mark.django_db
-class TestLeadServices:
-    """
-    Test lead service functions.
-    """
+def test_create_lead():
 
-    def test_create_lead(self):
-        """
-        Should create a new lead.
-        """
+    lead = Lead.objects.create(
+        full_name="Amir Behvandi",
+        email="amir@test.com",
+        source=LeadSource.WEBSITE,
+    )
 
-        lead = create_lead(
-            first_name="John",
-            last_name="Doe",
-            email="john@example.com",
-            company="Example Inc",
-        )
+    assert lead.id is not None
+    assert lead.full_name == "Amir Behvandi"
+    assert lead.status == LeadStatus.NEW
 
-        assert lead.id is not None
-        assert lead.first_name == "John"
-        assert lead.status == LeadStatus.NEW
 
-    def test_update_lead(self, lead_factory):
-        """
-        Should update lead information.
-        """
+@pytest.mark.django_db
+def test_lead_sets_sla_deadline():
 
-        lead = lead_factory()
+    before = timezone.now()
 
-        updated = update_lead(
-            lead=lead,
-            data={
-                "first_name": "Updated",
-                "company": "New Company",
-            },
-        )
+    lead = Lead.objects.create(
+        full_name="Test User",
+        email="test@test.com",
+        source=LeadSource.EVENT,
+    )
 
-        assert updated.first_name == "Updated"
-        assert updated.company == "New Company"
+    after = timezone.now()
 
-    def test_change_lead_status(self, lead_factory):
-        """
-        Should change lead status.
-        """
+    assert lead.sla_deadline is not None
 
-        lead = lead_factory()
+    assert (
+        before + timedelta(hours=24) <= lead.sla_deadline <= after + timedelta(hours=24)
+    )
 
-        updated = change_lead_status(
-            lead=lead,
-            status=LeadStatus.CONTACTED,
-        )
 
-        assert updated.status == LeadStatus.CONTACTED
+@pytest.mark.django_db
+def test_contact_attempt_relation(
+    user,
+):
 
-    def test_soft_delete_lead(self, lead_factory):
-        """
-        Should soft delete lead.
-        """
+    lead = Lead.objects.create(
+        full_name="John Smith",
+        email="john@test.com",
+        source=LeadSource.SOCIAL,
+    )
 
-        lead = lead_factory()
+    attempt = ContactAttempt.objects.create(
+        lead=lead,
+        channel=ContactChannel.CALL,
+        outcome=ContactOutcome.NO_ANSWER,
+        created_by=user,
+    )
 
-        delete_lead(
-            lead=lead,
-        )
-
-        lead.refresh_from_db()
-
-        assert lead.is_deleted is True
-        assert lead.deleted_at is not None
-
-    def test_restore_deleted_lead(self, lead_factory):
-        """
-        Should restore deleted lead.
-        """
-
-        lead = lead_factory()
-
-        delete_lead(
-            lead=lead,
-        )
-
-        restore_lead(
-            lead=lead,
-        )
-
-        lead.refresh_from_db()
-
-        assert lead.is_deleted is False
-        assert lead.deleted_at is None
+    assert attempt.lead == lead
+    assert lead.contact_attempts.count() == 1

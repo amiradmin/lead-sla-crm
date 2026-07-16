@@ -4,28 +4,27 @@ Global pytest configuration.
 Provides shared fixtures for project tests.
 """
 
-import os
-
-import django
 import pytest
 
+from django.contrib.auth import get_user_model
 
-os.environ.setdefault(
-    "DJANGO_SETTINGS_MODULE",
-    "config.settings.local",
-)
+from apps.leads.models import Lead
 
-
-django.setup()
-
-
-from apps.leads.tests.factories import LeadFactory  # noqa: E402
+User = get_user_model()
 
 
 @pytest.fixture
-def lead_factory():
-    """
-    Provide Lead factory.
-    """
+def user(db):
+    return User.objects.create_user(
+        username="amir",
+        password="123456",
+    )
 
-    return LeadFactory
+
+@pytest.fixture
+def lead(db):
+    return Lead.objects.create(
+        full_name="Existing Lead",
+        email="lead@test.com",
+        source="website",
+    )
