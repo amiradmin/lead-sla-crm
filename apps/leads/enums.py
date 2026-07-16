@@ -1,21 +1,9 @@
-"""
-Lead related enumerations.
-"""
-
-from django.db import models
+from django.db.models import TextChoices
 
 
-class LeadStatus(models.TextChoices):
-    """
-    Possible lifecycle states for a lead.
-    """
-
+class LeadStatus(TextChoices):
     NEW = "new", "New"
-
     CONTACTED = "contacted", "Contacted"
-
     QUALIFIED = "qualified", "Qualified"
-
-    CONVERTED = "converted", "Converted"
-
+    WON = "won", "Won"
     LOST = "lost", "Lost"
