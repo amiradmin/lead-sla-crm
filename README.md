@@ -107,7 +107,11 @@ pip install -r requirements/local.txt
 
 ## Database
 
-Create a PostgreSQL database and configure the environment variables.
+The project includes a Docker Compose configuration for PostgreSQL.
+
+Start the database:
+
+docker compose up -d
 
 Run migrations:
 
@@ -187,8 +191,3 @@ apps/
 
 Business logic is implemented in the **service layer**, while database queries are isolated in **selectors**.
 
----
-
-## Time Spent
-
-Approximately **5 hours**.
