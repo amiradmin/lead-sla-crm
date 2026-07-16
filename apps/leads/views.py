@@ -120,7 +120,7 @@ class LeadViewSet(viewsets.ViewSet):
         )
 
         lead = create_lead(
-            data=serializer.validated_data,
+            **serializer.validated_data,
         )
 
         output = LeadDetailSerializer(
