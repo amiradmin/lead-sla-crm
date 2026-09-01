@@ -1,6 +1,8 @@
-# Lead CRM – Backend Developer Test
+# Lead SLA CRM API
 
-A Django REST Framework implementation of a Lead SLA & Outreach module for an admissions CRM.
+A production-minded Django REST Framework API for lead assignment, outreach tracking, conversion workflows, and 24-hour SLA enforcement.
+
+This project demonstrates explicit business rules, service-layer architecture, selector-based queries, OpenAPI documentation, and automated testing.
 
 ## Tech Stack
 
@@ -86,8 +88,8 @@ The SLA measures the time between lead creation and the first successful contact
 Clone the repository:
 
 ```bash
-git clone <repository-url>
-cd ibos-crm-test
+git clone https://github.com/amiradmin/lead-sla-crm.git
+cd lead-sla-crm
 ```
 
 Create a virtual environment:
@@ -111,7 +113,9 @@ The project includes a Docker Compose configuration for PostgreSQL.
 
 Start the database:
 
+```bash
 docker compose up -d
+```
 
 Run migrations:
 
@@ -191,3 +195,20 @@ apps/
 
 Business logic is implemented in the **service layer**, while database queries are isolated in **selectors**.
 
+
+
+---
+
+## Architecture highlights
+
+- Business workflows are implemented in a dedicated service layer.
+- Read-oriented database access is isolated in selectors.
+- API contracts are documented with OpenAPI, Swagger UI, and ReDoc.
+- State transitions and SLA rules are covered by automated tests.
+- UUID identifiers and soft deletion support production-oriented data handling.
+
+## Collaboration
+
+Questions, code reviews, improvement proposals, and focused pull requests are welcome. Please open an issue before making a substantial architectural change.
+
+For broader backend, industrial AI, or open-source collaboration, join the [ForgeMind Discussions](https://github.com/amiradmin/ForgeMind/discussions).
